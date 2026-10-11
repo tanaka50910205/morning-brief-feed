@@ -17,8 +17,9 @@
 fetch('feed.json', { cache: 'no-store' })
   .then(r => r.json())
   .then(f => {
-    document.getElementById('title').textContent = f.titleText;
-    document.getElementById('text').textContent = f.mainText;
+    const items = Array.isArray(f) ? f : [f];
+    document.getElementById('text').textContent =
+      items.map(x => '【' + x.titleText + '】\n' + x.mainText).join('\n\n');
   })
   .catch(() => { document.getElementById('text').textContent = 'まだ配信がありません。'; });
 </script>
