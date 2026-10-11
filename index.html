@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morning Brief Feed</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #2E2C27; background: #FCFCFB; line-height: 1.7; }
+  h1 { font-size: 22px; }
+  #text { white-space: pre-wrap; color: #6B6A63; }
+</style>
+</head>
+<body>
+<h1 id="title">モーニングブリーフ</h1>
+<p id="text">読み込み中…</p>
+<script>
+fetch('feed.json', { cache: 'no-store' })
+  .then(r => r.json())
+  .then(f => {
+    document.getElementById('title').textContent = f.titleText;
+    document.getElementById('text').textContent = f.mainText;
+  })
+  .catch(() => { document.getElementById('text').textContent = 'まだ配信がありません。'; });
+</script>
+</body>
+</html>
