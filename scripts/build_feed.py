@@ -2,14 +2,14 @@
 """Alexa フラッシュニュース（Flash Briefing）用の JSON フィードを生成する。
 
 使い方:
-    # 毎朝のラジオ原稿（episode.json）から、コーナーごとに1項目のフィードを作る
+    # 毎朝のラジオ原稿（episode.json）から、全コーナーを1項目にまとめたフィードを作る
     python3 scripts/build_feed.py --episode /mnt/project-files/morning-news/episode.json
 
     # 任意の本文1つで作る（テスト用）
     python3 scripts/build_feed.py "読み上げ本文"
 
-feed.json を上書きする。Alexa のテキスト読み上げ上限は1項目 4500 文字なので、超えた分は切り詰める。
-Alexa は updateDate の新しい順に読むので、先頭のコーナーほど新しい時刻を付けて番組順に流れるようにする。
+feed.json を上書きする。Alexa はフィード1つにつき5項目までしか読まないため、全コーナーを1項目にまとめる。
+テキスト読み上げ上限は1項目 4500 文字なので、超えた分は切り詰める。
 """
 import argparse
 import json
@@ -52,15 +52,12 @@ def from_episode(path: Path) -> list:
     segments = [s for s in ep.get("segments", []) if str(s.get("text", "")).strip()]
     if not segments:
         raise ValueError("episode.json に読み上げられる segments がありません")
-    now_utc = datetime.now(timezone.utc).replace(microsecond=0)
-    date_key = str(ep.get("date") or datetime.now(JST).strftime("%Y-%m-%d")).replace("-", "")
-    items = []
-    for i, seg in enumerate(segments):
-        # 先頭ほど新しい時刻 → Alexa が番組順に読む
-        when = now_utc - timedelta(seconds=i)
-        title = seg.get("label") or seg.get("headline") or f"コーナー{i + 1}"
-        items.append(item(f"morning-radio-{date_key}-{i + 1:02d}", when, title, seg["text"]))
-    return items
+    now = datetime.now(JST)
+    date_key = str(ep.get("date") or now.strftime("%Y-%m-%d")).replace("-", "")
+    title = ep.get("dateLabel") or f"モーニングブリーフ {now.month}月{now.day}日"
+    # Alexa はフィード1つにつき最大5項目しか読まないので、全コーナーを1項目にまとめる
+    text = " ".join(str(s["text"]).strip() for s in segments)
+    return [item(f"morning-radio-{date_key}", now.astimezone(timezone.utc).replace(microsecond=0), title, text)]
 
 
 def main() -> int:
